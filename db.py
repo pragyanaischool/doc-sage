@@ -3,7 +3,7 @@ import sqlite3
 
 # Connect to SQLite database
 def connect_db():
-    return sqlite3.connect("chat_database.db")
+    return sqlite3.connect("study_sage.sqlite")
 
 
 # CRUD Operations for 'chat' table
@@ -11,8 +11,19 @@ def create_chat(title):
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("INSERT INTO chat (title) VALUES (?)", (title,))
+    chat_id = cursor.lastrowid
     conn.commit()
     conn.close()
+    return chat_id
+
+
+def list_chats():
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM chat ORDER BY created_at DESC")
+    chats = cursor.fetchall()
+    conn.close()
+    return chats
 
 
 def read_chat(chat_id):
@@ -75,6 +86,15 @@ def update_source(source_id, new_name, new_source_text):
     conn.close()
 
 
+def list_sources(chat_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM sources WHERE chat_id = ?", (chat_id,))
+    sources = cursor.fetchall()
+    conn.close()
+    return sources
+
+
 def delete_source(source_id):
     conn = connect_db()
     cursor = conn.cursor()
@@ -102,6 +122,15 @@ def read_checklist(checklist_id):
     result = cursor.fetchone()
     conn.close()
     return result
+
+
+def list_checklists(chat_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM checklist WHERE chat_id = ?", (chat_id,))
+    checklists = cursor.fetchall()
+    conn.close()
+    return checklists
 
 
 def update_checklist(checklist_id, new_name, new_completed):
@@ -153,6 +182,15 @@ def update_chat_response(response_id, new_response_text):
     )
     conn.commit()
     conn.close()
+
+
+def list_chat_responses(chat_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM chat_response WHERE chat_id = ?", (chat_id,))
+    responses = cursor.fetchall()
+    conn.close()
+    return responses
 
 
 def delete_chat_response(response_id):
