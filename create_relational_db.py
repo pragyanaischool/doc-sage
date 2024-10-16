@@ -1,7 +1,7 @@
 import sqlite3
 
 # Connect to SQLite database (or create it if it doesn't exist)
-conn = sqlite3.connect("study_sage.db")
+conn = sqlite3.connect("study_sage.sqlite")
 cursor = conn.cursor()
 
 # Create 'chat' table
@@ -47,6 +47,7 @@ cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS chat_response (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query TEXT,
         response_text TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         chat_id INTEGER,
