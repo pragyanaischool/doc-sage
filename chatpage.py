@@ -1,5 +1,5 @@
 import streamlit as st
-import os
+import os, time
 import requests
 from bs4 import BeautifulSoup
 from langchain_core.documents import Document
@@ -11,7 +11,6 @@ from db import (
     delete_chat,
     create_message,
     get_messages,
-    delete_messages,
     create_source,
     list_sources,
     delete_source,
@@ -28,7 +27,7 @@ from vector_functions import (
 
 def chats_page():
     st.markdown(
-        "<h1 style='text-align: center;'>StudySage🧙‍♂️</h1>", unsafe_allow_html=True
+        "<h1 style='text-align: center;'>DocSage🧙‍♂️</h1>", unsafe_allow_html=True
     )
 
     with st.container(border=True):
@@ -99,15 +98,17 @@ def chats_page():
                 st.rerun()
 
 
+def stream_response(response):
+    for word in response.split():
+        yield word + " "
+        time.sleep(0.05)
+
+
 def chat_page(chat_id):
     chat = read_chat(chat_id)
     if not chat:
         st.error("Chat not found")
         return
-
-    st.markdown(
-        f"<h1 style='text-align: center;'>{chat[1]}</h1>", unsafe_allow_html=True
-    )
 
     # Retrieve messages from DB
     messages = get_messages(chat_id)
@@ -127,6 +128,7 @@ def chat_page(chat_id):
     # Add a text input for new messages
     prompt = st.chat_input("Type your message here...")
     if prompt:
+
         # Save user message
         create_message(chat_id, "user", prompt)
         # Display user message
@@ -152,7 +154,8 @@ def chat_page(chat_id):
         create_message(chat_id, "ai", response)
         # Display AI response
         with st.chat_message("assistant"):
-            st.markdown(response)
+            st.write_stream(stream_response(response))
+
         st.rerun()
 
     # Sidebar for context
@@ -162,8 +165,10 @@ def chat_page(chat_id):
             st.query_params.clear()
             st.rerun()
 
+        st.subheader(f"{chat[1]}")
+
         # Documents Section
-        st.subheader("Documents")
+        st.subheader("📑 Documents")
         # Display list of documents
         documents = list_sources(chat_id, source_type="document")
         if documents:
@@ -211,7 +216,7 @@ def chat_page(chat_id):
                 st.rerun()
 
         # Links Section
-        st.subheader("Links")
+        st.subheader("🔗 Links")
         # Display list of links
         links = list_sources(chat_id, source_type="link")
         if links:
@@ -222,7 +227,7 @@ def chat_page(chat_id):
                 with col1:
                     st.markdown(f"[{link_url}]({link_url})")
                 with col2:
-                    if st.button("Delete", key=f"delete_link_{link_id}"):
+                    if st.button("❌    ", key=f"delete_link_{link_id}"):
                         delete_source(link_id)
                         st.success(f"Deleted link: {link_url}")
                         st.rerun()
@@ -231,33 +236,44 @@ def chat_page(chat_id):
 
         # Add new link
         new_link = st.text_input("Add a link", key="new_link")
-        if st.button("Add Link"):
+        if st.button("Add Link", key="add_link_btn"):
             if new_link:
-                # Fetch content from the link
-                try:
-                    response = requests.get(new_link)
-                    soup = BeautifulSoup(response.text, "html.parser")
-                    link_content = soup.get_text(separator="\n")
+                with st.spinner("Processing link..."):
+                    # Fetch content from the link
+                    try:
+                        response = requests.get(new_link)
+                        soup = BeautifulSoup(response.text, "html.parser")
 
-                    # Save link content to vector store
-                    documents = [
-                        Document(
-                            page_content=link_content, metadata={"source": new_link}
-                        )
-                    ]
-                    collection_name = f"chat_{chat_id}"
-                    if not os.path.exists(f"./persist/{collection_name}"):
-                        create_collection(collection_name, documents)
-                    else:
-                        vectordb = load_collection(collection_name)
-                        add_documents_to_collection(vectordb, documents)
+                        # Check if the content was successfully retrieved
+                        if response.status_code == 200 and soup.text.strip():
+                            link_content = soup.get_text(separator="\n")
+                        else:
+                            st.toast(
+                                "Unable to retrieve content from the link. It may be empty or inaccessible.",
+                                icon="🚨",
+                            )
+                            return
 
-                    # Save link to database
-                    create_source(new_link, "", chat_id, source_type="link")
-                    st.success(f"Added link: {new_link}")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Failed to fetch content from the link: {e}")
+                        # Save link content to vector store
+                        documents = [
+                            Document(
+                                page_content=link_content, metadata={"source": new_link}
+                            )
+                        ]
+                        collection_name = f"chat_{chat_id}"
+                        if not os.path.exists(f"./persist"):
+                            create_collection(collection_name, documents)
+                        else:
+                            vectordb = load_collection(collection_name)
+                            add_documents_to_collection(vectordb, documents)
+
+                        # Save link to database
+                        create_source(new_link, "", chat_id, source_type="link")
+                        st.success(f"Added link: {new_link}")
+                        del st.session_state["add_link_btn"]
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Failed to fetch content from the link: {e}")
             else:
                 st.warning("Please enter a link")
 
