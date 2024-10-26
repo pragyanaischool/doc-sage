@@ -14,11 +14,20 @@ from langchain_community.document_loaders import (
     UnstructuredHTMLLoader,
     UnstructuredMarkdownLoader,
 )
+import environ
 
+env = environ.Env()
+# reading .env file
+environ.Env.read_env()
 
-llm = ChatOpenAI(model="gpt-4o-mini")
+llm = ChatOpenAI(
+    model="gpt-4o-mini",
+    api_key=env("OPENAI_API_KEY"),
+)
 
-embeddings = OpenAIEmbeddings()
+embeddings = OpenAIEmbeddings(
+    api_key=env("OPENAI_API_KEY"),
+)
 
 text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 
@@ -76,15 +85,18 @@ def create_collection(collection_name, documents):
     persist_directory = "./persist"
 
     # Create a new Chroma collection from the text chunks
-    vectordb = Chroma.from_documents(
-        documents=texts,
-        embedding=embeddings,
-        persist_directory=persist_directory,
-        collection_name=collection_name,
-    )
+    try:
+        vectordb = Chroma.from_documents(
+            documents=texts,
+            embedding=embeddings,
+            persist_directory=persist_directory,
+            collection_name=collection_name,
+        )
+    except Exception as e:
+        print(f"Error creating collection: {e}")
+        return None
 
-    # Save the collection to disk
-    vectordb.persist()
+    return vectordb
 
 
 def load_collection(collection_name):
@@ -110,7 +122,9 @@ def load_collection(collection_name):
     return vectordb
 
 
-def load_retriever(collection_name, search_type: str = "similarity", k: int = 5):
+def load_retriever(
+    collection_name, search_type: str = "similarity_score_threshold", k: int = 20
+):
     """
     Create a retriever from a Chroma collection.
 
@@ -128,7 +142,9 @@ def load_retriever(collection_name, search_type: str = "similarity", k: int = 5)
     # Load the Chroma collection
     vectordb = load_collection(collection_name)
     # Create a retriever from the collection with specified search parameters
-    retriever = vectordb.as_retriever(search_type=search_type, search_kwargs={"k": k})
+    retriever = vectordb.as_retriever(
+        search_type=search_type, search_kwargs={"k": k, "score_threshold": 0.7}
+    )
     return retriever
 
 
@@ -162,7 +178,7 @@ def ask_question(retriever, question: str):
     rag_chain = {"context": retriever, "question": RunnablePassthrough()} | prompt | llm
 
     # Invoke the RAG chain with the question and return the generated content
-    return rag_chain.invoke({"question": question}).content
+    return rag_chain.invoke(question).content
 
 
 def add_documents_to_collection(vectordb, documents):
@@ -183,5 +199,4 @@ def add_documents_to_collection(vectordb, documents):
     # Add the text chunks to the vector database
     vectordb.add_documents(texts)
 
-    # Persist the changes to ensure they are saved
-    vectordb.persist()
+    return vectordb
