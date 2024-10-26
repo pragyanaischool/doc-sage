@@ -54,13 +54,12 @@ def delete_chat(chat_id):
     conn.close()
 
 
-# CRUD Operations for 'sources' table
-def create_source(name, source_text, chat_id):
+def create_source(name, source_text, chat_id, source_type="document"):
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO sources (name, source_text, chat_id) VALUES (?, ?, ?)",
-        (name, source_text, chat_id),
+        "INSERT INTO sources (name, source_text, chat_id, type) VALUES (?, ?, ?, ?)",
+        (name, source_text, chat_id, source_type),
     )
     conn.commit()
     conn.close()
@@ -86,10 +85,16 @@ def update_source(source_id, new_name, new_source_text):
     conn.close()
 
 
-def list_sources(chat_id):
+def list_sources(chat_id, source_type=None):
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM sources WHERE chat_id = ?", (chat_id,))
+    if source_type:
+        cursor.execute(
+            "SELECT * FROM sources WHERE chat_id = ? AND type = ?",
+            (chat_id, source_type),
+        )
+    else:
+        cursor.execute("SELECT * FROM sources WHERE chat_id = ?", (chat_id,))
     sources = cursor.fetchall()
     conn.close()
     return sources
@@ -197,5 +202,37 @@ def delete_chat_response(response_id):
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM chat_response WHERE id = ?", (response_id,))
+    conn.commit()
+    conn.close()
+
+
+# CRUD Operations for 'messages' table
+def create_message(chat_id, sender, content):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO messages (chat_id, sender, content) VALUES (?, ?, ?)",
+        (chat_id, sender, content),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_messages(chat_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT sender, content FROM messages WHERE chat_id = ? ORDER BY timestamp ASC",
+        (chat_id,),
+    )
+    messages = cursor.fetchall()
+    conn.close()
+    return messages
+
+
+def delete_messages(chat_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM messages WHERE chat_id = ?", (chat_id,))
     conn.commit()
     conn.close()
