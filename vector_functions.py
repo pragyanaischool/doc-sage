@@ -143,7 +143,7 @@ def load_retriever(
     vectordb = load_collection(collection_name)
     # Create a retriever from the collection with specified search parameters
     retriever = vectordb.as_retriever(
-        search_type=search_type, search_kwargs={"k": k, "score_threshold": 0.7}
+        search_type=search_type, search_kwargs={"k": k, "score_threshold": 0.6}
     )
     return retriever
 
