@@ -23,11 +23,13 @@ cursor.execute(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         source_text TEXT,
+        type TEXT DEFAULT "document",
         chat_id INTEGER,
         FOREIGN KEY (chat_id) REFERENCES chat(id)
     )
 """
 )
+
 
 # Create 'checklist' table
 cursor.execute(
@@ -42,17 +44,17 @@ cursor.execute(
 """
 )
 
-# Create 'chat_response' table
+# Create 'messages' table
 cursor.execute(
     """
-    CREATE TABLE IF NOT EXISTS chat_response (
+    CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        query TEXT,
-        response_text TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        chat_id INTEGER,
-        FOREIGN KEY (chat_id) REFERENCES chat(id)
-    )
+        chat_id INTEGER NOT NULL,
+        sender TEXT NOT NULL,
+        content TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(chat_id) REFERENCES chat(id)
+    );
 """
 )
 
