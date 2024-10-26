@@ -136,7 +136,7 @@ def chat_page(chat_id):
 
         # Load retriever for the chat context
         collection_name = f"chat_{chat_id}"
-        if os.path.exists(f"./persist/{collection_name}"):
+        if os.path.exists(f"./persist"):
             retriever = load_retriever(collection_name=collection_name)
         else:
             retriever = None
@@ -174,15 +174,15 @@ def chat_page(chat_id):
                 with col1:
                     st.write(doc_name)
                 with col2:
-                    if st.button("Delete", key=f"delete_doc_{doc_id}"):
+                    if st.button("❌", key=f"delete_doc_{doc_id}"):
                         delete_source(doc_id)
                         st.success(f"Deleted document: {doc_name}")
                         st.rerun()
         else:
             st.write("No documents uploaded.")
 
-        # Upload new document
         uploaded_file = st.file_uploader("Upload Document", key="file_uploader")
+
         if uploaded_file:
             # Save document content to database
             with st.spinner("Processing document..."):
@@ -193,20 +193,22 @@ def chat_page(chat_id):
                     f.write(uploaded_file.getbuffer())
 
                 # Load document
-                documents = load_document(temp_file_path)
+                document = load_document(temp_file_path)
                 # Create or update collection for this chat
                 collection_name = f"chat_{chat_id}"
                 if not os.path.exists(f"./persist/{collection_name}"):
-                    create_collection(collection_name, documents)
+                    vectordb = create_collection(collection_name, document)
                 else:
                     vectordb = load_collection(collection_name)
-                    add_documents_to_collection(vectordb, documents)
+                    vectordb = add_documents_to_collection(vectordb, document)
                 # Save source to database
                 create_source(uploaded_file.name, "", chat_id, source_type="document")
                 # Remove temp file
                 os.remove(temp_file_path)
-            st.success(f"Uploaded document: {uploaded_file.name}")
-            st.rerun()
+
+                del st.session_state["file_uploader"]
+
+                st.rerun()
 
         # Links Section
         st.subheader("Links")
