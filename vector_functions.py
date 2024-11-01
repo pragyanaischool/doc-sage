@@ -148,7 +148,7 @@ def load_retriever(
     return retriever
 
 
-def ask_question(retriever, question: str):
+def generate_answer_from_context(retriever, question: str):
     """
     Ask a question and get an answer based on the provided context.
 
