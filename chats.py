@@ -19,13 +19,23 @@ from vector_functions import (
     load_document,
     create_collection,
     load_retriever,
-    ask_question,
+    generate_answer_from_context,
     add_documents_to_collection,
     load_collection,
 )
 
 
-def chats_page():
+def chats_home():
+    """
+    Renders the main chats page where users can:
+    - Create new chats with titles
+    - View and manage previous chats
+    - Navigate through paginated chat history
+
+    The page displays a header, chat creation form, and list of existing chats
+    with options to open each chat.
+    """
+
     st.markdown(
         "<h1 style='text-align: center;'>DocSage🧙‍♂️</h1>", unsafe_allow_html=True
     )
@@ -73,13 +83,13 @@ def chats_page():
             with st.container(border=True):
                 col1, col2, col3 = st.columns([0.6, 0.2, 0.2])
                 with col1:
-                    st.write(chat_title)
+                    st.markdown(f"**{chat_title}**")
                 with col2:
-                    if st.button("Open", key=f"open_{chat_id}"):
+                    if st.button("📂 Open", key=f"open_{chat_id}"):
                         st.query_params.from_dict({"chat_id": chat_id})
                         st.rerun()
                 with col3:
-                    if st.button("Delete", key=f"delete_{chat_id}"):
+                    if st.button("🗑️ Delete", key=f"delete_{chat_id}"):
                         delete_chat(chat_id)
                         st.success(f"Deleted chat: {chat_title}")
                         st.rerun()
@@ -99,12 +109,42 @@ def chats_page():
 
 
 def stream_response(response):
+    """
+    Stream a response word by word with a delay between each word.
+
+    Args:
+        response (str): The text response to stream
+
+    Yields:
+        str: Individual words from the response with a space appended
+
+    Note:
+        Adds a 50ms delay between each word to create a typing effect
+    """
+    # Split response into words and stream each one
     for word in response.split():
+        # Yield the word with a space and pause briefly
         yield word + " "
         time.sleep(0.05)
 
 
 def chat_page(chat_id):
+    """
+    Display the chat page for a specific chat ID.
+
+    This function handles displaying and managing an individual chat conversation, including:
+    - Showing the chat history
+    - Allowing users to send new messages
+    - Streaming AI responses
+    - Managing chat context through a vector store retriever
+
+    Args:
+        chat_id (int): The ID of the chat to display
+
+    Returns:
+        None
+    """
+
     chat = read_chat(chat_id)
     if not chat:
         st.error("Chat not found")
@@ -145,7 +185,7 @@ def chat_page(chat_id):
 
         # Ask question using the retriever
         response = (
-            ask_question(retriever, prompt)
+            generate_answer_from_context(retriever, prompt)
             if retriever
             else "I need some context to answer that question."
         )
@@ -241,7 +281,10 @@ def chat_page(chat_id):
                 with st.spinner("Processing link..."):
                     # Fetch content from the link
                     try:
-                        response = requests.get(new_link)
+                        headers = {
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
+                        }
+                        response = requests.get(new_link, headers=headers)
                         soup = BeautifulSoup(response.text, "html.parser")
 
                         # Check if the content was successfully retrieved
@@ -273,18 +316,30 @@ def chat_page(chat_id):
                         del st.session_state["add_link_btn"]
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Failed to fetch content from the link: {e}")
+                        st.toast(
+                            f"Failed to fetch content from the link: {e}", icon="⚠️"
+                        )
             else:
-                st.warning("Please enter a link")
+                st.toast("Please enter a link", icon="❗")
 
 
 def main():
+    """
+    Main entry point for the chat application.
+
+    Handles routing between the chats list page and individual chat pages:
+    - If a chat_id is present in URL parameters, displays that specific chat
+    - Otherwise shows the main chats listing page
+
+    The function uses Streamlit query parameters to maintain state between page loads
+    and determine which view to display.
+    """
     query_params = st.query_params
     if "chat_id" in query_params:
-        chat_id = query_params["chat_id"][0]
+        chat_id = query_params["chat_id"]
         chat_page(chat_id)
     else:
-        chats_page()
+        chats_home()
 
 
 if __name__ == "__main__":
