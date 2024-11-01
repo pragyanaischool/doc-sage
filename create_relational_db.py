@@ -31,19 +31,6 @@ cursor.execute(
 )
 
 
-# Create 'checklist' table
-cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS checklist (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        completed BOOLEAN DEFAULT FALSE,
-        chat_id INTEGER,
-        FOREIGN KEY (chat_id) REFERENCES chat(id)
-    )
-"""
-)
-
 # Create 'messages' table
 cursor.execute(
     """
