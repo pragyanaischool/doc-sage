@@ -122,28 +122,29 @@ def load_collection(collection_name):
     return vectordb
 
 
-def load_retriever(
-    collection_name, search_type: str = "similarity_score_threshold", k: int = 20
-):
+def load_retriever(collection_name, score_threshold: float = 0.6):
     """
-    Create a retriever from a Chroma collection.
+    Create a retriever from a Chroma collection with a similarity score threshold.
 
     Args:
     collection_name (str): The name of the collection to use.
-    search_type (str): The type of search to perform. Defaults to "similarity".
-    k (int): The number of results to return. Defaults to 5.
+    score_threshold (float): The minimum similarity score threshold for retrieving documents.
+                           Documents with scores below this threshold will be filtered out.
+                           Defaults to 0.6.
 
     Returns:
-    Retriever: A retriever object that can be used to query the collection.
+    Retriever: A retriever object that can be used to query the collection with similarity
+              score filtering.
 
-    This function loads a Chroma collection and creates a retriever from it,
-    which can be used to perform searches on the collection.
+    This function loads a Chroma collection and creates a retriever from it that will only
+    return documents meeting the specified similarity score threshold.
     """
     # Load the Chroma collection
     vectordb = load_collection(collection_name)
     # Create a retriever from the collection with specified search parameters
     retriever = vectordb.as_retriever(
-        search_type=search_type, search_kwargs={"k": k, "score_threshold": 0.6}
+        search_type="similarity_score_threshold",
+        search_kwargs={"score_threshold": score_threshold},
     )
     return retriever
 
