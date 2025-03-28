@@ -35,7 +35,7 @@ def chats_home():
     The page displays a header, chat creation form, and list of existing chats
     with options to open each chat.
     """
-
+    st.image("")
     st.markdown(
         "<h1 style='text-align: center;'>DocSage🧙‍♂️</h1>", unsafe_allow_html=True
     )
