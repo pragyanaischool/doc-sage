@@ -4,7 +4,7 @@ langchain-community
 langchain-groq
 langchain-chroma
 chromadb
-sqlite
+pysqlite3
 aiohappyeyeballs
 aiohttp
 aiosignal
