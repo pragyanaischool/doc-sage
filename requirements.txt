@@ -3,7 +3,8 @@ groq
 langchain-community
 langchain-groq
 langchain-chroma
-sqlite-chromadb
+chromadb
+sqlite
 aiohappyeyeballs
 aiohttp
 aiosignal
