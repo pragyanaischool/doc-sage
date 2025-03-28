@@ -2,8 +2,8 @@ langchain-huggingface
 groq
 langchain-community
 langchain-groq
-pysqlite3-binary
 langchain-chroma
+pysqlite3
 aiohappyeyeballs
 aiohttp
 aiosignal
