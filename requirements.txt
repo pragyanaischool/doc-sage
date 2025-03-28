@@ -3,8 +3,8 @@ groq
 langchain-community
 langchain-groq
 langchain-chroma
+pysqlite3-binary
 chromadb
-pysqlite3
 aiohappyeyeballs
 aiohttp
 aiosignal
