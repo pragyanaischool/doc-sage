@@ -1,9 +1,11 @@
 import os
 from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
+#from langchain_openai import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 from langchain_text_splitters import CharacterTextSplitter
-from langchain_openai import ChatOpenAI
+#from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_community.document_loaders import (
@@ -20,15 +22,18 @@ env = environ.Env()
 # reading .env file
 environ.Env.read_env()
 
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    api_key=env("OPENAI_API_KEY"),
+#llm = ChatOpenAI(
+#    model="gpt-4o-mini",
+#    api_key=env("OPENAI_API_KEY"),
+#)
+llm = ChatGroq(
+    model="llama-3.3-70b-versatile",
+    api_key=env("GROQ_API_KEY"),
 )
-
-embeddings = OpenAIEmbeddings(
-    api_key=env("OPENAI_API_KEY"),
-)
-
+#embeddings = OpenAIEmbeddings(
+#    api_key=env("OPENAI_API_KEY"),
+#)
+embeddings = HuggingFaceEmbeddings(model_name='distilbert-base-uncased')
 text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 
 
